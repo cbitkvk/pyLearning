@@ -1,0 +1,1 @@
+print("i am invoked when you import the package")
