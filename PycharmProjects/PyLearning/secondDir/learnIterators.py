@@ -28,7 +28,17 @@ print(n.__next__())
 but later it fails as the genrator does not have any more values'''
 
 
-trues = filter(None, [0, 1, True, False, "hello"])
-print(list(trues))
+trues = filter(None, [1, False, "hello"])
+print(list(trues))  # Here None function is used to return all true values in a list.
+# true values are 1, True, non blank list etc.
 
 
+n = list((1, 2, 3))
+p = list(('a', 'b', 'c', 'd'))
+
+j = [(a, b) for (a, b) in zip(n, p)]
+print(j)
+
+print([n for n in n])
+
+print(list((zip(n, p))))
