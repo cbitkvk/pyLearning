@@ -23,6 +23,12 @@ print(dir(n))
 print(n.__next__())
 print(n.__next__())
 print(n.__next__())
-print(n.__next__())
+# print(n.__next__())
 ''' here i am getting the next value from the generator, it works fine for 0, 1, 2 
 but later it fails as the genrator does not have any more values'''
+
+
+trues = filter(None, [0, 1, True, False, "hello"])
+print(list(trues))
+
+
