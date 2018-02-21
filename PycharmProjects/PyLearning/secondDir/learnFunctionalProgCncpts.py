@@ -23,7 +23,7 @@ class Trace:
 
 
 n = ['a', 'b', 'c']
-nMap = map(Trace()(ord), [str(n1) for n1 in n])
+nMap = map(Trace()(ord), n)
 print(list(nMap))
 # print(next(nMap))
 # print(next(nMap))
