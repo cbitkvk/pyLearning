@@ -18,11 +18,11 @@ mylogger.setLevel(level=logging.INFO)
 # all the .DEBUG statements would not be sent to the below filehandleer
 # because file handler has set a higher level of criteria of INFO compared to DEBUG.
 myfileHandler = logging.FileHandler('D://python.logger')
-myfileHandler.setLevel(level = logging.INFO)
+myfileHandler.setLevel(level=logging.INFO)
 
 # Another file handler with level set to ERROR.
 myfileHandler2 = logging.FileHandler('D://python.logger.error')
-myfileHandler2.setLevel(level = logging.ERROR)
+myfileHandler2.setLevel(level=logging.ERROR)
 
 # we attach any number of file handlers to a logger. Data is set from logger to
 # different file handlers based on loggers level, file handlers level.
