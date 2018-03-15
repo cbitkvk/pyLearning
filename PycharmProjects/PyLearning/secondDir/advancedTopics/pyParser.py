@@ -1,7 +1,7 @@
 def build_stack(equation):
     elem = equation.split(" ")
-    elem1 = filter(len,elem)
-    return elem
+    elem1 = [el for el in elem if len(el)]
+    return elem1
 
 
 def read_data(data):
