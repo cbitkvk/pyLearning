@@ -1,6 +1,12 @@
+import re
+
+
 def build_stack(equation):
-    elem = equation.split(" ")
-    elem1 = [el for el in elem if len(el)]
+    pattern = re.compile("(?P<oper>re.escape("".join(operators) ))")
+    equation2 = pattern.subn(r" {oper} ", equation)
+    print(equation2)
+    elem = equation2.split(" ")
+    elem1 = [str(el) for el in elem if len(el)]
     return elem1
 
 
@@ -17,7 +23,7 @@ data="""vinay|100
 kumar|200
 sper|1000"""
 
-evaluate = " ( vinay + kumar ) < ( sper - kumar )"
+evaluate = " ( vinay + kumar ) < ( sper * 100-kumar)"
 
 operators = ["+", "-", "/", "*", "(", ")", ">", "<", ">=", "<=", "<>", "!"]
 
@@ -28,7 +34,7 @@ def check_operator(data_dict, elem):
             return data_dict[elem]
         except Exception as p:
             print(elem)
-
+            return elem
     else:
         return elem
 
