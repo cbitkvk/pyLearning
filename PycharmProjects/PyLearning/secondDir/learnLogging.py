@@ -36,3 +36,5 @@ mylogger.debug("debugging")
 
 # numerical values for different logging levels. DEBUG being lowest and ERROR being highest.
 print(logging.ERROR, logging.DEBUG, logging.INFO, logging.WARN, logging.WARNING)
+
+
