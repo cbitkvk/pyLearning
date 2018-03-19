@@ -10,6 +10,7 @@ def build_stack(equation):
     return elem1
 
 
+
 def read_data(data):
     dt = data.split("\n")
     dict = {}
