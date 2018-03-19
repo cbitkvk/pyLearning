@@ -59,3 +59,7 @@ if __name__ == '__main__':
     ptrn = re.compile("import")
     grep_result = unix_grep(line_number=True, ignore_case=True)
     print(grep_result)
+
+print(__file__.__str__().split("/")[-1])
+print(__name__)
+print(globals())

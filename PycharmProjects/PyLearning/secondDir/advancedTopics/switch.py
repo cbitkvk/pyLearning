@@ -35,3 +35,5 @@ except KeyError as e:
     a = int(input("enter_value"))
 else:
     what_to_do()
+
+print(__file__)

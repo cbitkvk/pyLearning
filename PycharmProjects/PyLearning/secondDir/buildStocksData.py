@@ -1,10 +1,26 @@
-import sys, os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Stocks'))
-
 from PyLearning.Stocks.Stock import *
+import logging
+
+processLogger = logging.getLogger(__name__)
+processLogger.setLevel(logging.INFO)
+
+logFile = logging.FileHandler(file="D://pythonLogging//" + __file__ + ".log",mode="w")
+logFile.setLevel(logging.INFO)
+
+stdout = logging.StreamHandler()
+stdout.setLevel(logging.INFO)
+
+errFile = logging.FileHandler(file="D://pythonLogging//" + __file__ + ".err",mode="w")
+errFile.setLevel(logging.ERROR)
+
+processLogger.addHandler(logFile)
+processLogger.addHandler(errFile)
+processLogger.addHandler(stdout)
+
 
 def main(args):
-    stock_dict = {}
+    print(args)
+    stock_dict = dict()
     stock_dict['script_name'] = "hello"
     stock_dict['previous_close'] = 100.1
     stock_dict['today_open'] = 101.1
@@ -24,6 +40,7 @@ def main(args):
     print(type(stck))
     print(stck.__repr__())
     print(stck)
+
 
 if __name__ == "__main__":
     main("")
