@@ -1,20 +1,36 @@
+import urllib.request
+
+
+def set_header_url():
+    hdr = {
+        'User-Agent': """Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) 
+        Chrome/23.0.1271.64 Safari/537.11""",
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q = 0.9,*/*;q = 0.8',
+        'Accept-Charset': 'ISO-8859-1,utf-8;q = 0.7,*;q = 0.3',
+        'Accept-Encoding': 'none',
+        'Accept-Language': 'en-US,en;q = 0.8',
+        'Connection': 'keep-alive'}
+    return hdr
+
+
 class Stock:
     def __init__(self, stock_dict):
         self.script_name = stock_dict['script_name']
-        self.previous_close = stock_dict['previous_close']
-        self.today_open = stock_dict['today_open']
-        self.prev_close = stock_dict['prev_close']
-        self.open_price = stock_dict['open_price']
-        self.high_price = stock_dict['high_price']
-        self.low_price = stock_dict['low_price']
-        self.last_price = stock_dict['last_price']
-        self.close_price = stock_dict['close_price']
-        self.avg_price = stock_dict['avg_price']
-        self.ttl_trd_qnty = stock_dict['ttl_trd_qnty']
-        self.turnover_lacs = stock_dict['turnover_lacs']
-        self.no_of_trades = stock_dict['no_of_trades']
-        self.deliv_qty = stock_dict['deliv_qty']
-        self.deliv_per = stock_dict['deliv_per']
+        if False:
+            self.previous_close = stock_dict['previous_close']
+            self.today_open = stock_dict['today_open']
+            self.prev_close = stock_dict['prev_close']
+            self.open_price = stock_dict['open_price']
+            self.high_price = stock_dict['high_price']
+            self.low_price = stock_dict['low_price']
+            self.last_price = stock_dict['last_price']
+            self.close_price = stock_dict['close_price']
+            self.avg_price = stock_dict['avg_price']
+            self.ttl_trd_qnty = stock_dict['ttl_trd_qnty']
+            self.turnover_lacs = stock_dict['turnover_lacs']
+            self.no_of_trades = stock_dict['no_of_trades']
+            self.deliv_qty = stock_dict['deliv_qty']
+            self.deliv_per = stock_dict['deliv_per']
 
     def get_price_variation(self):
         try:
@@ -33,3 +49,18 @@ class Stock:
 
     def __repr__(self):
         return self.__dict__
+
+    def download_stock_price(self):
+        hdr = set_header_url()
+        # url = """https://www.nseindia.com/products/dynaContent/common/productsSymbolMapping.jsp?symbol={}&
+        # segmentLink=3&symbolCount=1&series=ALL&dateRange=+&fromDate={}&toDate={}&
+        # dataType=PRICEVOLUMEDELIVERABLE""".format(self.script_name, start_date, end_date)
+
+        url = """https://www.nseindia.com/live_market/dynaContent/live_watch/get_quote/getHistoricalData.jsp?symbol={}&series=EQ&fromDate=undefined&toDate=undefined&datePeriod=1day""".format(self.script_name)
+        print("URL:", url)
+        rqst = urllib.request.Request(url, headers=hdr)
+        rsp = urllib.request.urlopen(rqst)
+
+
+        data_html = rsp.read()
+        print(data_html)
