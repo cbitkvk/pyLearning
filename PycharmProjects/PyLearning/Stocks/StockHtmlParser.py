@@ -42,7 +42,8 @@ class StockHtmlParser(HTMLParser):
             self.stock_dict[data] = None
             self.header_names.append(data)
         else:
-            self.stock_dict[self.header_names[self.column_count]] = data
+            # self.stock_dict[self.header_names[self.column_count]] = data
+            self.stock_dict['abc'] =self.column_count
         print(self.stock_dict)
 
     def close(self):

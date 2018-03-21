@@ -69,12 +69,14 @@ class Stock:
         # hence using decode
         # data_html would be html file in utf-8 encoding format now.
         data_html = rsp.read().decode("utf-8")
+        print("****Full response****")
         print(data_html)
+        print("****Full response****")
         # convert data to dict
         stock_dict = dict()
         prs = StockHtmlParser()
         prs.feed(data_html)
-        self.set_class_variables(stock_dict)
+        self.set_class_variables(prs.stock_dict)
 
     def set_class_variables(self, stock_dict):
         self.previous_close = stock_dict['previous_close']
