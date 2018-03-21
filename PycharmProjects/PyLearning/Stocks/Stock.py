@@ -1,4 +1,6 @@
 import urllib.request
+import traceback
+from PyLearning.Stocks.StockHtmlParser import StockHtmlParser
 
 
 def set_header_url():
@@ -16,6 +18,9 @@ def set_header_url():
 class Stock:
     def __init__(self, stock_dict):
         self.script_name = stock_dict['script_name']
+        self.date_list = stock_dict['date_list'][0]
+        self.exchange = stock_dict['exchange']
+
         if False:
             self.previous_close = stock_dict['previous_close']
             self.today_open = stock_dict['today_open']
@@ -60,7 +65,29 @@ class Stock:
         print("URL:", url)
         rqst = urllib.request.Request(url, headers=hdr)
         rsp = urllib.request.urlopen(rqst)
-
-
-        data_html = rsp.read()
+        # Here we get the response as binary str. we need to convert to utf-8 string.
+        # hence using decode
+        # data_html would be html file in utf-8 encoding format now.
+        data_html = rsp.read().decode("utf-8")
         print(data_html)
+        # convert data to dict
+        stock_dict = dict()
+        prs = StockHtmlParser()
+        prs.feed(data_html)
+        self.set_class_variables(stock_dict)
+
+    def set_class_variables(self, stock_dict):
+        self.previous_close = stock_dict['previous_close']
+        self.today_open = stock_dict['today_open']
+        self.prev_close = stock_dict['prev_close']
+        self.open_price = stock_dict['open_price']
+        self.high_price = stock_dict['high_price']
+        self.low_price = stock_dict['low_price']
+        self.last_price = stock_dict['last_price']
+        self.close_price = stock_dict['close_price']
+        self.avg_price = stock_dict['avg_price']
+        self.ttl_trd_qnty = stock_dict['ttl_trd_qnty']
+        self.turnover_lacs = stock_dict['turnover_lacs']
+        self.no_of_trades = stock_dict['no_of_trades']
+        self.deliv_qty = stock_dict['deliv_qty']
+        self.deliv_per = stock_dict['deliv_per']

@@ -43,7 +43,7 @@ def main(args):
     process_logger = logging.getLogger(__name__)
     mod_name = __file__.__str__().split("/")[-1].replace(".py", "")
     set_logger(process_logger, mod_name)
-    p = Stock({"script_name": "INFY"}).download_stock_price()
+    p = Stock({"script_name": "INFY", "date_list": ["212"] , "exchange": "NSE"}).download_stock_price()
     print(p)
     if False:
             stock_dict = dict()
