@@ -53,7 +53,7 @@ def main(args):
     for stk in list_of_stocks:
         p = Stock({"script_name": stk, "date_list": ["212"], "exchange": "NSE"})
         p.download_stock_price()
-        print(p)
+        # print(p)
         stocks_dict[stk] = p
 
     for stk, dct in stocks_dict.items():

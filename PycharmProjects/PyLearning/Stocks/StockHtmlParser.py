@@ -48,18 +48,18 @@ class StockHtmlParser(HTMLParser):
                 if self.column_count <= len(self.header_names):
                     if "\n\t" not in data:
                         self.stock_dict[self.header_names[self.column_count - 1]] = data
-                        print(data)
-                        print(self.header_names[self.column_count-1])
+                        # print(data)
+                        # print(self.header_names[self.column_count-1])
                     # print("column count", self.column_count)
                     # print("header count", len(self.header_names))
                     # self.stock_dict['abc'] =self.column_count
-                    print(self.header_names)
+                    # print(self.header_names)
         except Exception as p:
             print(self.tr_count)
             print(self.header_names)
             print(self.column_count)
 
-        print(self.stock_dict)
+        # print(self.stock_dict)
 
     def close(self):
         return self.stock_dict

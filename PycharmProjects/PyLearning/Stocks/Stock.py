@@ -20,6 +20,21 @@ class Stock:
         self.date_list = stock_dict['date_list'][0]
         self.exchange = stock_dict['exchange']
 
+        # just for temporary to get rid of that warning.
+
+        self.prev_close = None
+        self.open_price = None
+        self.high_price = None
+        self.low_price = None
+        self.last_price = None
+        self.close_price = None
+        self.vwap = None
+        self.ttl_trd = None
+        self.turnover = None
+        self.no_of = None
+        self.deliverable = None
+
+
     def get_price_variation(self):
         try:
             return (self.high_price - self.low_price)/self.high_price
@@ -49,27 +64,15 @@ class Stock:
         print("URL:", url)
         rqst = urllib.request.Request(url, headers=hdr)
         rsp = urllib.request.urlopen(rqst)
-        # commenting for testing
 
         # Here we get the response as binary str. we need to convert to utf-8 string.
         # hence using decode
         # data_html would be html file in utf-8 encoding format now.
 
         data_html = rsp.read().decode("utf-8").replace("<br />", " ")
-        # commented for testing.
-        # data_html = """<div class="historic-bar" style="width:542px; margin-bottom:5px;">
-		#	<span class="download-data-link"><a download target"_blank" style='cursor:pointer'  >Download file in csv format</a></span>
-		# </div>
-		# <div id='csvContentDiv' style='display:none;'>"Date","Symbol","Series","Open Price","High Price","Low Price","Last Traded Price ","Close Price","Total Traded Quantity","Turnover (in Lakhs)":"21-Mar-2018","INFY","EQ","1,170.00","1,175.50","1,162.20","       1166.20","1,167.50","38,46,497","45,062.71":</div>
-	
-
-# <table><tbody><tr><th>Date</th><th>Symbol</th><th>Series</th><th>Open Price</th><th>High Price</th><th>Low Price</th><th>Last Traded Price </th><th>Close Price</th><th>Total Traded Quantity</th><th>Turnover (in Lakhs)</th></tr>
-# <tr><td>21-Mar-2018</td><td>INFY</td><td>EQ</td><td>1,170.00</td><td>1,175.50</td><td>1,162.20</td><td>       1166.20</td><td>1,167.50</td><td>38,46,497</td><td>45,062.71</td></tr>
-# </tbody></table>
-# """
-        print("****Full response****")
-        print(data_html)
-        print("****Full response****")
+        # print("****Full response****")
+        # print(data_html)
+        # print("****Full response****")
         # convert data to dict
         stock_dict = dict()
         prs = StockHtmlParser()
@@ -78,8 +81,6 @@ class Stock:
             self.set_class_variables(prs.stock_dict)
 
     def set_class_variables(self, stock_dict):
-        # self.previous_close = stock_dict['previous_close']
-        # self.today_open = stock_dict['today_open']
         self.prev_close = stock_dict['Prev Close']
         self.open_price = stock_dict['Open Price']
         self.high_price = stock_dict['High Price']
