@@ -1,6 +1,6 @@
 from PyLearning.Stocks.Stock import *
 import logging
-
+import ast
 
 def set_header_url():
     hdr = {
@@ -43,34 +43,24 @@ def main(args):
     process_logger = logging.getLogger(__name__)
     mod_name = __file__.__str__().split("/")[-1].replace(".py", "")
     set_logger(process_logger, mod_name)
-    p = Stock({"script_name": "INFY", "date_list": ["212"] , "exchange": "NSE"}).download_stock_price()
-    print(p)
-    if False:
-            stock_dict = dict()
-            stock_dict['script_name'] = "hello"
-            stock_dict['previous_close'] = 100.1
-            stock_dict['today_open'] = 101.1
-            stock_dict['prev_close'] = 99.1
-            stock_dict['open_price'] = 100.1
-            stock_dict['high_price'] = 120
-            stock_dict['low_price'] = 80
-            stock_dict['last_price'] = 97
-            stock_dict['close_price'] = 120
-            stock_dict['avg_price'] = 190
-            stock_dict['ttl_trd_qnty'] = 20000
-            stock_dict['turnover_lacs'] = 8000
-            stock_dict['no_of_trades'] = 5552131
-            stock_dict['deliv_qty'] = 123165
-            stock_dict['deliv_per'] = 651
-            stck = Stock(stock_dict)
-            print(type(stck))
-            print(stck.__repr__())
-            print(stck)
+    # p = Stock({"script_name": "INFY", "date_list": ["212"] , "exchange": "NSE"}).download_stock_price()
+    # print(p)
 
+    # Read the file containing list of stocks on NSE.
+    list_of_stocks_str = open("C:\\Users\\Dell\\Desktop\\stock_list_nse.txt").read()
+    list_of_stocks = ast.literal_eval(list_of_stocks_str)
+    stocks_dict = {}
+    for stk in list_of_stocks:
+        p = Stock({"script_name": stk, "date_list": ["212"], "exchange": "NSE"})
+        p.download_stock_price()
+        print(p)
+        stocks_dict[stk] = p
+
+    for stk, dct in stocks_dict.items():
+        print(stk, "->", dct)
 
 if __name__ == "__main__":
     main("")
-
 
 # https://www.nseindia.com/live_market/dynaContent/live_watch/get_quote/getHistoricalData.jsp?symbol=INFY&series=EQ&fromDate=undefined&toDate=undefined&datePeriod=1day
 # https://www.nseindia.com/products/dynaContent/common/productsSymbolMapping.jsp?symbol=INFY&segmentLink=3&symbolCount=1&series=ALL&dateRange=+&fromDate=01-03-2018&toDate=20-03-2018&dataType=PRICEVOLUMEDELIVERABLE

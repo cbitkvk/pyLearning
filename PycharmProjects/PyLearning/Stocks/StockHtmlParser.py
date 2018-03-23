@@ -34,16 +34,31 @@ class StockHtmlParser(HTMLParser):
 
     def handle_endtag(self, tag):
         # print("Encountered an end tag :", tag)
-        pass
+        if tag == 'tr':
+            self.tr_count += 1
 
     def handle_data(self, data):
-        print("Encountered some data  :", data)
-        if self.tr_count == 1:
-            self.stock_dict[data] = None
-            self.header_names.append(data)
-        else:
-            # self.stock_dict[self.header_names[self.column_count]] = data
-            self.stock_dict['abc'] =self.column_count
+        # print("Encountered some data  :", data)
+        try:
+            if self.tr_count == 1:
+                if "\n\t" not in data and ' ' != data:
+                    self.stock_dict[data] = None
+                    self.header_names.append(data)
+            else:
+                if self.column_count <= len(self.header_names):
+                    if "\n\t" not in data:
+                        self.stock_dict[self.header_names[self.column_count - 1]] = data
+                        print(data)
+                        print(self.header_names[self.column_count-1])
+                    # print("column count", self.column_count)
+                    # print("header count", len(self.header_names))
+                    # self.stock_dict['abc'] =self.column_count
+                    print(self.header_names)
+        except Exception as p:
+            print(self.tr_count)
+            print(self.header_names)
+            print(self.column_count)
+
         print(self.stock_dict)
 
     def close(self):
