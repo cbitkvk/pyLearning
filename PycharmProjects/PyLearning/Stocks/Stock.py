@@ -79,7 +79,7 @@ class Stock:
         # convert data to dict
         stock_dict = dict()
         prs = StockHtmlParser()
-        if not "No Record Found" in data_html:
+        if not ("No Record Found" in data_html or " No Records  " in data_html):
             prs.feed(data_html)
             self.set_class_variables(prs.stock_dict)
             self.mylogger.info(msg="End of download of {}".format(self.script_name))
