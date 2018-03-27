@@ -6,6 +6,7 @@ import pymysql
 import logging
 from decimal import *
 
+
 def set_header_url():
     hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -23,6 +24,7 @@ class Stock:
         self.script_name = stock_dict['script_name']
         self.date_list = stock_dict['date_list'][0]
         self.exchange = stock_dict['exchange']
+        self.stock_dict = stock_dict
 
         # just for temporary to get rid of that warning.
         self.prev_close = None
@@ -64,7 +66,6 @@ class Stock:
         # url = """https://www.nseindia.com/live_market/dynaContent/live_watch/get_quote/getHistoricalData.jsp?symbol={}&series=EQ&fromDate=undefined&toDate=undefined&datePeriod=1day""".format(self.script_name)
         url = """https://www.nseindia.com/products/dynaContent/common/productsSymbolMapping.jsp?symbol={}&segmentLink=3&symbolCount=1&series=ALL&dateRange=day&fromDate=&toDate=&dataType=PRICEVOLUMEDELIVERABLE""".format(self.script_name)
         self.mylogger.info(msg="Started the download of {}".format(self.script_name))
-
         rqst = urllib.request.Request(url, headers=hdr)
         rsp = urllib.request.urlopen(rqst)
 
@@ -84,6 +85,7 @@ class Stock:
             self.set_class_variables(prs.stock_dict)
             self.mylogger.info(msg="End of download of {}".format(self.script_name))
 
+
     def set_class_variables(self, stock_dict):
         self.prev_close = stock_dict['Prev Close']
         self.open_price = stock_dict['Open Price']
@@ -97,13 +99,20 @@ class Stock:
         self.no_of = stock_dict['No. of  Trades']
         self.deliverable = stock_dict['Deliverable Qty'] if stock_dict['Deliverable Qty'] != "-" else None
         # self.dly_qt_to = stock_dict['% Dly Qt to Traded Qty']
+        for k,v in stock_dict.items():
+            self.stock_dict[k] = v
 
     def get_connection_details(self):
         return pymysql.connect(host='localhost', user='root', password='vinay', db='stocks',
                                charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor)
 
-    def write_to_db(self):
-        connection = self.get_connection_details()
+    def write_to_db(self, connection=None):
+        try:
+            r = connection.cursor()
+        except NameError as exp:
+            connection = self.get_connection_details()
+            r = connection.cursor()
+
         sql = "insert into stocks.stock_names values(%s, %s, %s)"
         print("wrinting to db")
         r = connection.cursor()
@@ -121,7 +130,7 @@ class Stock:
                               self.convert_decimal(self.turnover),
                               self.convert_decimal(self.no_of),
                               self.convert_decimal(self.deliverable)))
-        connection.commit()
+        # connection.commit()
 
     def convert_decimal(self, val):
         return None if (val == None or val == "-") else val.replace(",", "")
