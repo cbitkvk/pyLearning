@@ -22,7 +22,7 @@ class Stock:
         self.mylogger = logg
 
         self.script_name = stock_dict['script_name']
-        self.date_list = stock_dict['date_list'][0]
+        self.date_list = stock_dict['date_list']
         self.exchange = stock_dict['exchange']
         self.stock_dict = stock_dict
 
@@ -107,17 +107,20 @@ class Stock:
                                charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor)
 
     def write_to_db(self, connection=None):
-        try:
-            r = connection.cursor()
-        except NameError as exp:
-            connection = self.get_connection_details()
-            r = connection.cursor()
+        # try:
+        #    r = connection.cursor()
+        #    print("using input connection")
+        # except NameError as exp:
+        #   connection = self.get_connection_details()
+        #    print("getting connection")
+        #    r = connection.cursor()
 
+        connection = self.get_connection_details()
+        r = connection.cursor()
         sql = "insert into stocks.stock_names values(%s, %s, %s)"
         print("wrinting to db")
-        r = connection.cursor()
         r.execute(sql, args=(1, self.script_name, self.exchange))
-        sql2 = "insert into stocks.script_detailed_info values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        sql2 = "insert into stocks.script_detailed_info values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
         # r.execute(sql2, args=(self.script_name, Decimal(self.prev_close.replace(",","")), Decimal(self.open_price.replace(",","")), Decimal(self.high_price.replace(",","")), Decimal(self.low_price.replace(",","")), Decimal(self.last_price.replace(",","")), Decimal(self.close_price.replace(",","")), Decimal(self.vwap.replace(",","")), Decimal(self.ttl_trd.replace(",","")), Decimal(self.turnover.replace(",","")), Decimal(self.no_of.replace(",","")), Decimal(self.deliverable.replace(",",""))))
         r.execute(sql2, args=(self.script_name, self.convert_decimal(self.prev_close),
                               self.convert_decimal(self.open_price),
@@ -129,8 +132,9 @@ class Stock:
                               self.convert_decimal(self.ttl_trd),
                               self.convert_decimal(self.turnover),
                               self.convert_decimal(self.no_of),
-                              self.convert_decimal(self.deliverable)))
-        # connection.commit()
+                              self.convert_decimal(self.deliverable),
+                              self.date_list ))
+        connection.commit()
 
     def convert_decimal(self, val):
         return None if (val == None or val == "-") else val.replace(",", "")
