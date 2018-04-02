@@ -58,33 +58,35 @@ class Stock:
         return self.__dict__
 
     def download_stock_price(self):
-        hdr = set_header_url()
-        # url = """https://www.nseindia.com/products/dynaContent/common/productsSymbolMapping.jsp?symbol={}&
-        # segmentLink=3&symbolCount=1&series=ALL&dateRange=+&fromDate={}&toDate={}&
-        # dataType=PRICEVOLUMEDELIVERABLE""".format(self.script_name, start_date, end_date)
+        try:
+            hdr = set_header_url()
+            # url = """https://www.nseindia.com/products/dynaContent/common/productsSymbolMapping.jsp?symbol={}&
+            # segmentLink=3&symbolCount=1&series=ALL&dateRange=+&fromDate={}&toDate={}&
+            # dataType=PRICEVOLUMEDELIVERABLE""".format(self.script_name, start_date, end_date)
 
-        # url = """https://www.nseindia.com/live_market/dynaContent/live_watch/get_quote/getHistoricalData.jsp?symbol={}&series=EQ&fromDate=undefined&toDate=undefined&datePeriod=1day""".format(self.script_name)
-        url = """https://www.nseindia.com/products/dynaContent/common/productsSymbolMapping.jsp?symbol={}&segmentLink=3&symbolCount=1&series=ALL&dateRange=day&fromDate=&toDate=&dataType=PRICEVOLUMEDELIVERABLE""".format(self.script_name)
-        self.mylogger.info(msg="Started the download of {}".format(self.script_name))
-        rqst = urllib.request.Request(url, headers=hdr)
-        rsp = urllib.request.urlopen(rqst)
+            # url = """https://www.nseindia.com/live_market/dynaContent/live_watch/get_quote/getHistoricalData.jsp?symbol={}&series=EQ&fromDate=undefined&toDate=undefined&datePeriod=1day""".format(self.script_name)
+            url = """https://www.nseindia.com/products/dynaContent/common/productsSymbolMapping.jsp?symbol={}&segmentLink=3&symbolCount=1&series=ALL&dateRange=day&fromDate=&toDate=&dataType=PRICEVOLUMEDELIVERABLE""".format(self.script_name)
+            self.mylogger.info(msg="Started the download of {}".format(self.script_name))
+            rqst = urllib.request.Request(url, headers=hdr)
+            rsp = urllib.request.urlopen(rqst)
 
-        # Here we get the response as binary str. we need to convert to utf-8 string.
-        # hence using decode
-        # data_html would be html file in utf-8 encoding format now.
+            # Here we get the response as binary str. we need to convert to utf-8 string.
+            # hence using decode
+            # data_html would be html file in utf-8 encoding format now.
 
-        data_html = rsp.read().decode("utf-8").replace("<br />", " ")
-        # print("****Full response****")
-        # print(data_html)
-        # print("****Full response****")
-        # convert data to dict
-        stock_dict = dict()
-        prs = StockHtmlParser()
-        if not ("No Record Found" in data_html or " No Records  " in data_html):
-            prs.feed(data_html)
-            self.set_class_variables(prs.stock_dict)
-            self.mylogger.info(msg="End of download of {}".format(self.script_name))
-
+            data_html = rsp.read().decode("utf-8").replace("<br />", " ")
+            # print("****Full response****")
+            # print(data_html)
+            # print("****Full response****")
+            # convert data to dict
+            stock_dict = dict()
+            prs = StockHtmlParser()
+            if not ("No Record Found" in data_html or " No Records  " in data_html):
+                prs.feed(data_html)
+                self.set_class_variables(prs.stock_dict)
+                self.mylogger.info(msg="End of download of {}".format(self.script_name))
+        except Exception as p:
+            self.mylogger.error(msg="Download of {} has failed".format(self.script_name))
 
     def set_class_variables(self, stock_dict):
         self.prev_close = stock_dict['Prev Close']
