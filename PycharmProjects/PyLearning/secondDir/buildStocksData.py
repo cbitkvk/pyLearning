@@ -56,6 +56,15 @@ def tables_cleanup():
     con.commit()
 
 
+def copy_data_to_history():
+    con = pymysql.connect(host='localhost', user='root', password='vinay', db='stocks',
+                               charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor)
+    cur = con.cursor()
+    sql = 'insest into stocks.script_detailed_info_history select * from script_detailed_info'
+    cur.execute(sql)
+    con.commit()
+
+
 def mythread_call(stock, sem, con):
     sem.acquire()
     stock.download_stock_price()
@@ -108,6 +117,7 @@ def main():
         print(stk, "->", dct)
 
     pickle.dump(list_of_stocks, file=open("D://marketdata//todayJson.pkl", 'wb'))
+    copy_data_to_history()
 
 
 if __name__ == "__main__":

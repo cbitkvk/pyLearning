@@ -42,11 +42,13 @@ class StockHtmlParser(HTMLParser):
             self.top_count += 1
         if tag == "tr":
             if self.tr_count:
-                self.stock_dicts.append(self.stock_dict)
+                j = self.stock_dict.copy()
+                self.stock_dicts.append(j)
+                self.column_count = 0
             self.tr_count += 1
             # Not the ideal way, but i am resetting the column count to 0
             # so that we can access column/header names while reading data
-            self.column_count = 0
+
         if tag == "tbody":
             self.tbody_count += 1
         if tag in ["td", "th"]:
@@ -68,7 +70,8 @@ class StockHtmlParser(HTMLParser):
                 if self.column_count <= len(self.header_names):
                     if "\n\t" not in data:
                         self.stock_dict[self.header_names[self.column_count - 1]] = data
-                        # print(data)
+                        #print("this is data",data)
+                        #print(self.stock_dicts)
                         # print(self.header_names[self.column_count-1])
                     # print("column count", self.column_count)
                     # print("header count", len(self.header_names))
@@ -96,7 +99,7 @@ def set_header_url():
 
 script_name = "INFY"
 hdr = set_header_url()
-url = """https://www.nseindia.com/products/dynaContent/common/productsSymbolMapping.jsp?symbol={}&segmentLink=3&symbolCount=1&series=ALL&dateRange=3month&fromDate=&toDate=&dataType=PRICEVOLUMEDELIVERABLE""".format(
+url = """https://www.nseindia.com/products/dynaContent/common/productsSymbolMapping.jsp?symbol={}&segmentLink=3&symbolCount=1&series=ALL&dateRange=week&fromDate=&toDate=&dataType=PRICEVOLUMEDELIVERABLE""".format(
     script_name)
 rqst = urllib.request.Request(url, headers=hdr)
 rsp = urllib.request.urlopen(rqst)
@@ -123,7 +126,8 @@ print("wrinting to db")
 r.execute(sql, args=(1, script_name, "NSE"))
 sql2 = "insert into stocks.script_detailed_info values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 for scp in prs.stock_dicts:
-    r.execute(sql2, args=(scp["Symbol"], convert_decimal(scp["Prev Close"]),
+    if None:
+        r.execute(sql2, args=(scp["Symbol"], convert_decimal(scp["Prev Close"]),
                       convert_decimal(scp["Open Price"]),
                       convert_decimal(scp["High Price"]),
                       convert_decimal(scp["Low Price"]),
