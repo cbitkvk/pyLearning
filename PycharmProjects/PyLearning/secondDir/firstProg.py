@@ -13,7 +13,7 @@ that's why we could directly inport the other package firstDir directly.
  '__annotations__': {}, '__builtins__': <module 'builtins' (built-in)>, 
  '__file__': 'C:/Users/Dell/PycharmProjects/PyLearning/secondDir/firstProg.py', 
  '__cached__': None, 
- 'firstDir': <module 'firstDir' from 'C:\\Users\\Dell\\PycharmProjects\\PyLearning\\firstDir\\__init__.py'>, 
+ 'firstDir': <module 'firstDir' from 'C:\\Users\\Dell\\PycharmProjects\\PyLearning\\firstDir\\dummy.py'>, 
  'sys': <module 'sys' (built-in)>}
 which explains the same
 '''

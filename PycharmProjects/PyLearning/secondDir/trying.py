@@ -138,5 +138,5 @@ for scp in prs.stock_dicts:
                       convert_decimal(scp["Turnover "]),
                       convert_decimal(scp["No. of  Trades"]),
                       convert_decimal(scp["Deliverable Qty"]),
-                      datetime.datetime.strptime(scp["Date"], "%d-%b-%Y").strftime("%Y-%m-%d")))
+                          datetime.datetime.strptime(scp["Date"], "%d-%b-%Y").strftime("%Y-%m-%d")))
 connection.commit()

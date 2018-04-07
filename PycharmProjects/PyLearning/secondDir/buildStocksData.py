@@ -60,7 +60,7 @@ def copy_data_to_history():
     con = pymysql.connect(host='localhost', user='root', password='vinay', db='stocks',
                                charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor)
     cur = con.cursor()
-    sql = 'insest into stocks.script_detailed_info_history select * from script_detailed_info'
+    sql = 'insert into stocks.script_detailed_info_history select * from script_detailed_info'
     cur.execute(sql)
     con.commit()
 
@@ -70,6 +70,17 @@ def mythread_call(stock, sem, con):
     stock.download_stock_price()
     sem.release()
     stock.write_to_db()
+
+
+def get_next_run_date(con):
+    cur = con.cursor()
+    rec_cnt = cur.execute("select min(dt) as min_dt From stocks.date_list where loaded is null")
+    rec = cur.fetchall()
+    print(rec)
+    if rec[0]['min_dt'] > datetime.date.today()-datetime.timedelta(days=1):
+        return None
+    else:
+        return rec[0]['min_dt'].strftime("%Y-%m-%d")
 
 
 def main():
@@ -86,7 +97,10 @@ def main():
     con = pymysql.connect(host='localhost', user='root', password='vinay', db='stocks',
                                charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor)
     list_of_stocks = ast.literal_eval(list_of_stocks_str)
-    date_list = (datetime.date.today()).strftime("%Y-%m-%d")
+    # date_list = (datetime.date.today()).strftime("%Y-%m-%d")
+    next_dt = get_next_run_date(con)
+    if next_dt:
+        exit(1)
     exchange = "NSE"
     stocks_dict = {}
     curr_threads = list()
@@ -99,7 +113,7 @@ def main():
     cur_queue = Queue()
 
     for stk in list_of_stocks:
-        p = Stock({"script_name": stk, "date_list": date_list, "exchange": exchange}, process_logger)
+        p = Stock({"script_name": stk, "date_list": next_dt, "exchange": exchange}, process_logger)
     #    th = threading.Thread(target=p.download_stock_price())
     #    th = threading.Thread(target=mythread_call, args=(p, sem, con, ))
     #    th.start()
