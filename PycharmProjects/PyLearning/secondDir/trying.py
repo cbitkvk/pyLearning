@@ -97,46 +97,62 @@ def set_header_url():
            'Connection': 'keep-alive'}
     return hdr
 
-script_name = "INFY"
-hdr = set_header_url()
-url = """https://www.nseindia.com/products/dynaContent/common/productsSymbolMapping.jsp?symbol={}&segmentLink=3&symbolCount=1&series=ALL&dateRange=week&fromDate=&toDate=&dataType=PRICEVOLUMEDELIVERABLE""".format(
-    script_name)
-rqst = urllib.request.Request(url, headers=hdr)
-rsp = urllib.request.urlopen(rqst)
-
-data_html = rsp.read().decode("utf-8").replace("<br />", " ")
-stock_dict = dict()
-prs = StockHtmlParser()
-if not ("No Record Found" in data_html or " No Records  " in data_html):
-    prs.feed(data_html)
-    print(prs.stock_dict)
-    print(prs.stock_dicts)
 
 def get_connection_details():
         return pymysql.connect(host='localhost', user='root', password='vinay', db='stocks',
                                charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor)
 
-def convert_decimal( val):
-        return None if (val == None or val == "-") else val.replace(",", "")
 
-connection = get_connection_details()
-r = connection.cursor()
-sql = "insert into stocks.stock_names values(%s, %s, %s)"
-print("wrinting to db")
-r.execute(sql, args=(1, script_name, "NSE"))
-sql2 = "insert into stocks.script_detailed_info values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-for scp in prs.stock_dicts:
-    if None:
-        r.execute(sql2, args=(scp["Symbol"], convert_decimal(scp["Prev Close"]),
-                      convert_decimal(scp["Open Price"]),
-                      convert_decimal(scp["High Price"]),
-                      convert_decimal(scp["Low Price"]),
-                      convert_decimal(scp["Last Price"]),
-                      convert_decimal(scp["Close Price"]),
-                      convert_decimal(scp["VWAP"]),
-                      convert_decimal(scp["Total Traded  Quantity"]),
-                      convert_decimal(scp["Turnover "]),
-                      convert_decimal(scp["No. of  Trades"]),
-                      convert_decimal(scp["Deliverable Qty"]),
-                          datetime.datetime.strptime(scp["Date"], "%d-%b-%Y").strftime("%Y-%m-%d")))
-connection.commit()
+def convert_decimal(val):
+    return None if (val == None or val == "-") else val.replace(",", "")
+
+
+list_of_stocks_str = open("C:\\Users\\Dell\\Desktop\\stock_list_nse.txt").read()
+list_of_stocks = ast.literal_eval(list_of_stocks_str)
+hdr = set_header_url()
+for script_name in list_of_stocks:
+    url = """https://www.nseindia.com/products/dynaContent/common/productsSymbolMapping.jsp?symbol={}&segmentLink=3&symbolCount=2&series=ALL&dateRange=+&fromDate=01-03-2017&toDate=01-07-2017&dataType=PRICEVOLUMEDELIVERABLE""".format(
+        script_name)
+    rqst = urllib.request.Request(url, headers=hdr)
+
+    try:
+        rsp = urllib.request.urlopen(rqst)
+    except TimeoutError as p:
+        rsp = urllib.request.urlopen(rqst)
+    print(rsp)
+    data_html = rsp.read().decode("utf-8").replace("<br />", " ")
+    print(script_name)
+    print(data_html)
+    stock_dict = dict()
+    prs = StockHtmlParser()
+    if not ("No Record Found" in data_html or " No Records  " in data_html):
+        prs.feed(data_html)
+        print(prs.stock_dict)
+        print(prs.stock_dicts)
+    connection = get_connection_details()
+    r = connection.cursor()
+    sql = "insert into stocks.stock_names values(%s, %s, %s)"
+    print("wrinting to db")
+    r.execute(sql, args=(1, script_name, "NSE"))
+    sql2 = "insert into stocks.hist_pull  values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    i = 0
+    for scp in prs.stock_dicts:
+        print(scp)
+        if i > 0:
+            try:
+                r.execute(sql2, args=(scp["Symbol"], convert_decimal(scp["Prev Close"]),
+                                  convert_decimal(scp["Open Price"]),
+                                  convert_decimal(scp["High Price"]),
+                                  convert_decimal(scp["Low Price"]),
+                                  convert_decimal(scp["Last Price"]),
+                                  convert_decimal(scp["Close Price"]),
+                                  convert_decimal(scp["VWAP"]),
+                                  convert_decimal(scp["Total Traded  Quantity"]),
+                                  convert_decimal(scp["Turnover "]),
+                                  convert_decimal(scp["No. of  Trades"]),
+                                  convert_decimal(scp["Deliverable Qty"]),
+                                  datetime.datetime.strptime(scp["Date"], "%d-%b-%Y").strftime("%Y-%m-%d")))
+            except Exception as j:
+                print(scp)
+        i += 1
+    connection.commit()

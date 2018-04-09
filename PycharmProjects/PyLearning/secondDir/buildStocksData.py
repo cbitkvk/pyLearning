@@ -162,7 +162,7 @@ def main():
     list_of_stocks = ast.literal_eval(list_of_stocks_str)
     # date_list = (datetime.date.today()).strftime("%Y-%m-%d")
     next_dt = get_next_run_date(con)
-    if next_dt:
+    if not next_dt:
         print("No dates to process")
         exit(1)
     exchange = "NSE"
@@ -197,7 +197,7 @@ def main():
     pickle.dump(list_of_stocks, file=open("D://marketdata//todayJson.pkl", 'wb'))
     copy_data_to_history()
     close_this_run(next_dt, con)
-    send_report("a", "b", con)
+    # send_report("a", "b", con)
 
 
 if __name__ == "__main__":
