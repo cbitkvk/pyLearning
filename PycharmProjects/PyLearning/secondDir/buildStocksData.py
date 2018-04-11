@@ -88,14 +88,27 @@ def close_this_run(dt, con):
     cur.execute("update stocks.date_list set loaded='Y' where dt = %s",args=dt)
     con.commit()
 
-def get_report_data(conn, type):
+
+def get_report_data(conn, type, date):
     curr = conn.cursor()
     if type == 'fluc':
         return_cnt = curr.execute("select * from stocks.script_detailed_info_history where stock_date = %s "
-                              "and abs(fluctuation) > 10 order by fluctuation desc", args='2018-04-06')
-    elif type == "change":
+                              "and abs(fluctuation) > 10 order by fluctuation desc", args=date)
+    elif type == "change" :
         return_cnt = curr.execute("select * from stocks.script_detailed_info_history where stock_date = %s "
-                                  "and abs(per_change_today) > 10 order by per_change_today desc", args='2018-04-06')
+                                  "and abs(per_change_today) > 10 order by per_change_today desc", args=date)
+    elif type == "weeklytrend":
+        return_cnt = curr.execute("select * from ( select curr.script_name as script_name, "
+                                  "(curr.close_price - hist.open_price)/hist.open_price*100 week_per_change from "
+                                  "stocks.script_detailed_info curr "
+                                  "inner join stocks.script_detailed_info_history hist "
+                                  "on hist.script_name = curr.script_name "
+                                  "and hist.stock_date = ( "
+                                  "select max(dl.dt) From (select max(dt) as mx from stocks.date_list "
+                                  "where loaded = 'Y') cur "
+                                  "inner join stocks.date_list dl "
+                                  "on datediff(cur.mx,dl.dt)>=7)) a where abs(week_per_change) > 10 order by week_per_change")
+
     else:
         print("invalid input")
         exit(1)
@@ -110,7 +123,7 @@ def get_report_data(conn, type):
     return data_list
 
 
-def send_report(email_id, password, conn):
+def send_report(email_id, password, conn, date):
     import smtplib
     import pandas
     from email.mime.multipart import MIMEMultipart
@@ -119,11 +132,13 @@ def send_report(email_id, password, conn):
     server.ehlo()
     server.starttls()
     server.login("stocks.reportgen@gmail.com", "Narendramodi")
-    data_list_fluc = get_report_data(conn,"fluc")
-    data_list_change = get_report_data(conn,"change")
+    data_list_fluc = get_report_data(conn, "fluc", date)
+    data_list_change = get_report_data(conn, "change", date)
+    data_list_weeklytrend = get_report_data(conn, "weeklytrend", date)
 
     df_fluc = pandas.DataFrame(data_list_fluc)
     df_change = pandas.DataFrame(data_list_change)
+    df_weeklytrend = pandas.DataFrame(data_list_weeklytrend)
 
     columns_to_remove_from_report = ['vwap', 'last_price', 'turnover', 'deliverable']
     report_columns_order = ['script_name', 'stock_date', 'close_price', 'low_price', 'high_price',
@@ -138,12 +153,17 @@ def send_report(email_id, password, conn):
     msg = df_fluc.to_html()  # The /n separates the message from the headers
 
     msg2 = df_change.to_html()  # The /n separates the message from the headers
-    msg = "<html><h2>Change data below which has changed by greater/lesser than 10% \n\n</h2>" \
-          "::\n\n" + msg2 + "\n <h2>Fluctuation data below which has chnaged by greater/lesser than 10% </h2>\n\n" + msg + "</html>"
+    msg3 = df_weeklytrend.to_html()  # The /n separates the message from the headers
+
+    msg = "<html><h2>Change over and above 10% \n\n</h2>" \
+          "::\n\n" + msg2 + "\n <h2>Fluctuation over and above than 10% </h2>\n\n" \
+          + msg + "\n <h2>Weekly trend: Change over and above than 10% </h2> \n" + msg3 + "</html>"
     print(msg)
     message = MIMEMultipart(
         "alternative", None, [MIMEText(msg, 'html')])
     server.sendmail("Stocks App", "vinaykumarcbit@yahoo.co.in", message.as_string())
+    server.sendmail("Stocks App", "vinaykumarkhambhampati@gmail.com", message.as_string())
+    server.sendmail("Stocks App", "manoj.kbti@gmail.com", message.as_string())
 
 
 def main():
@@ -197,7 +217,7 @@ def main():
     pickle.dump(list_of_stocks, file=open("D://marketdata//todayJson.pkl", 'wb'))
     copy_data_to_history()
     close_this_run(next_dt, con)
-    # send_report("a", "b", con)
+    send_report("a", "b", con, next_dt)
 
 
 if __name__ == "__main__":

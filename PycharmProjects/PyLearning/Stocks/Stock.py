@@ -65,7 +65,7 @@ class Stock:
             # dataType=PRICEVOLUMEDELIVERABLE""".format(self.script_name, start_date, end_date)
 
             # url = """https://www.nseindia.com/live_market/dynaContent/live_watch/get_quote/getHistoricalData.jsp?symbol={}&series=EQ&fromDate=undefined&toDate=undefined&datePeriod=1day""".format(self.script_name)
-            url = """https://www.nseindia.com/products/dynaContent/common/productsSymbolMapping.jsp?symbol={}&segmentLink=3&symbolCount=1&series=ALL&dateRange=day&fromDate=&toDate=&dataType=PRICEVOLUMEDELIVERABLE""".format(self.script_name)
+            url = """https://www.nseindia.com/products/dynaContent/common/productsSymbolMapping.jsp?symbol={}&segmentLink=3&symbolCount=1&series=EQ&dateRange=day&fromDate=&toDate=&dataType=PRICEVOLUMEDELIVERABLE""".format(self.script_name)
             self.mylogger.info(msg="Started the download of {}".format(self.script_name))
             rqst = urllib.request.Request(url, headers=hdr)
             rsp = urllib.request.urlopen(rqst)
