@@ -7,6 +7,8 @@ import threading
 import datetime
 from queue import Queue
 
+process_logger = None
+
 
 download_parallelism = 4
 db_parallelism = 2
@@ -14,7 +16,8 @@ db_parallelism = 2
 
 def set_header_url():
     hdr = {
-        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) '
+                      'Chrome/23.0.1271.64 Safari/537.11',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q = 0.9,*/*;q = 0.8',
         'Accept-Charset': 'ISO-8859-1,utf-8;q = 0.7,*;q = 0.3',
         'Accept-Encoding': 'none',
@@ -60,7 +63,10 @@ def copy_data_to_history():
     con = pymysql.connect(host='localhost', user='root', password='vinay', db='stocks',
                                charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor)
     cur = con.cursor()
-    sql = 'insert into stocks.script_detailed_info_history select *,(close_price-prev_close)*100/prev_close as per_change_today, (high_price - low_price)*100/low_price as fluctuation from script_detailed_info'
+    sql = 'insert into stocks.script_detailed_info_history ' \
+          'select *,(close_price-prev_close)*100/prev_close ' \
+          'as per_change_today, (high_price - low_price)*100/low_price ' \
+          'as fluctuation from script_detailed_info'
     cur.execute(sql)
     con.commit()
 
@@ -70,11 +76,14 @@ def mythread_call(stock, sem, con):
     stock.download_stock_price()
     sem.release()
     stock.write_to_db()
+    print(con)
 
 
 def get_next_run_date(con):
+    global process_logger
     cur = con.cursor()
     rec_cnt = cur.execute("select min(dt) as min_dt From stocks.date_list where loaded is null")
+    process_logger.info(msg="rec_cnt from date_list for next run is {}".format(rec_cnt))
     rec = cur.fetchall()
     print(rec)
     if rec[0]['min_dt'] > datetime.date.today():
@@ -84,20 +93,21 @@ def get_next_run_date(con):
 
 
 def close_this_run(dt, con):
-    cur = con.cursor()
-    cur.execute("update stocks.date_list set loaded='Y' where dt = %s",args=dt)
+    upd_date_list_cursor = con.cursor()
+    upd_date_list_cursor.execute("update stocks.date_list set loaded='Y' where dt = %s", args=dt)
     con.commit()
 
 
-def get_report_data(conn, type, date):
+def get_report_data(conn, report_type, date):
     curr = conn.cursor()
-    if type == 'fluc':
+    return_cnt = 0
+    if report_type == 'fluc':
         return_cnt = curr.execute("select * from stocks.script_detailed_info_history where stock_date = %s "
-                              "and abs(fluctuation) > 10 order by fluctuation desc", args=date)
-    elif type == "change" :
+                                  "and abs(fluctuation) > 10 order by fluctuation desc", args=date)
+    elif report_type == "change":
         return_cnt = curr.execute("select * from stocks.script_detailed_info_history where stock_date = %s "
                                   "and abs(per_change_today) > 10 order by per_change_today desc", args=date)
-    elif type == "weeklytrend":
+    elif report_type == "weeklytrend":
         return_cnt = curr.execute("select * from ( select curr.script_name as script_name, "
                                   "(curr.close_price - hist.open_price)/hist.open_price*100 week_per_change from "
                                   "stocks.script_detailed_info curr "
@@ -107,7 +117,8 @@ def get_report_data(conn, type, date):
                                   "select max(dl.dt) From (select max(dt) as mx from stocks.date_list "
                                   "where loaded = 'Y') cur "
                                   "inner join stocks.date_list dl "
-                                  "on datediff(cur.mx,dl.dt)>=7)) a where abs(week_per_change) > 10 order by week_per_change")
+                                  "on datediff(cur.mx,dl.dt)>=7)) a where abs(week_per_change) > 10 "
+                                  "order by week_per_change")
 
     else:
         print("invalid input")
@@ -116,7 +127,7 @@ def get_report_data(conn, type, date):
     for i in range(return_cnt):
         rec = curr.fetchone()
         data_list.append(rec.copy())
-        if i == 0 :
+        if i == 0:
             col_headers = rec.keys()
             print(col_headers)
         print(rec)
@@ -124,6 +135,7 @@ def get_report_data(conn, type, date):
 
 
 def send_report(email_id, password, conn, date):
+    print(email_id, password)
     import smtplib
     import pandas
     from email.mime.multipart import MIMEMultipart
@@ -144,8 +156,8 @@ def send_report(email_id, password, conn, date):
     report_columns_order = ['script_name', 'stock_date', 'close_price', 'low_price', 'high_price',
                             'per_change_today', 'fluctuation', 'no_of',
                             'open_price', 'prev_close',  'ttl_trd']
-    df_fluc.drop(axis=1, columns = columns_to_remove_from_report, inplace=True)
-    df_change.drop(axis=1, columns = columns_to_remove_from_report, inplace=True)
+    df_fluc.drop(axis=1, columns=columns_to_remove_from_report, inplace=True)
+    df_change.drop(axis=1, columns=columns_to_remove_from_report, inplace=True)
     df_fluc = df_fluc[report_columns_order]
     df_change = df_change[report_columns_order]
 
@@ -168,6 +180,7 @@ def send_report(email_id, password, conn, date):
 
 def main():
     process_logger = logging.getLogger(__name__)
+    global process_logger
     mod_name = __file__.__str__().split("/")[-1].replace(".py", "")
     set_logger(process_logger, mod_name)
     process_logger.info(msg="Started db cleanup")
@@ -188,13 +201,16 @@ def main():
     exchange = "NSE"
     stocks_dict = {}
     curr_threads = list()
+    print(curr_threads)
 
     # added the logic for semaphore. here we want to restict the number of
     # parallel threads to download_parallelism which is 4 here.
 
     sem = threading.BoundedSemaphore(value=download_parallelism)
+    print("{} is not being used".format(sem))
 
     cur_queue = Queue()
+    print("{} is not being used".format(cur_queue))
 
     for stk in list_of_stocks:
         p = Stock({"script_name": stk, "date_list": next_dt, "exchange": exchange}, process_logger)
