@@ -89,7 +89,8 @@ class StockHtmlParser(HTMLParser):
 
 
 def set_header_url():
-    hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
+    hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 '
+                         '(KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
            'Referer': 'https://cssspritegenerator.com',
            'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
@@ -111,7 +112,7 @@ list_of_stocks_str = open("C:\\Users\\Dell\\Desktop\\stock_list_nse.txt").read()
 list_of_stocks = ast.literal_eval(list_of_stocks_str)
 hdr = set_header_url()
 for script_name in list_of_stocks:
-    url = """https://www.nseindia.com/products/dynaContent/common/productsSymbolMapping.jsp?symbol={}&segmentLink=3&symbolCount=2&series=ALL&dateRange=+&fromDate=01-03-2017&toDate=01-07-2017&dataType=PRICEVOLUMEDELIVERABLE""".format(
+    url = """https://www.nseindia.com/products/dynaContent/common/productsSymbolMapping.jsp?symbol={}&segmentLink=3&symbolCount=1&series=EQ&dateRange=+&fromDate=01-04-2018&toDate=13-04-2018&dataType=PRICEVOLUMEDELIVERABLE""".format(
         script_name)
     rqst = urllib.request.Request(url, headers=hdr)
 
@@ -131,14 +132,11 @@ for script_name in list_of_stocks:
         print(prs.stock_dicts)
     connection = get_connection_details()
     r = connection.cursor()
-    sql = "insert into stocks.stock_names values(%s, %s, %s)"
-    print("wrinting to db")
-    r.execute(sql, args=(1, script_name, "NSE"))
     sql2 = "insert into stocks.hist_pull  values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
     i = 0
     for scp in prs.stock_dicts:
         print(scp)
-        if i > 0:
+        if i >= 0:
             try:
                 r.execute(sql2, args=(scp["Symbol"], convert_decimal(scp["Prev Close"]),
                                   convert_decimal(scp["Open Price"]),

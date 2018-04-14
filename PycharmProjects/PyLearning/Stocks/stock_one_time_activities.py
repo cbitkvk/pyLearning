@@ -32,25 +32,15 @@ def get_next_run_date(conn):
         return rec[0]['min_dt'].strftime("%Y-%m-%d")
 
 
-def get_report_data(conn, type):
+def get_report_data(conn, report_type, stocks_db_sql_info_dict):
     curr = conn.cursor()
-    if type == 'fluc':
-        return_cnt = curr.execute("select * from stocks.script_detailed_info_history where stock_date = %s "
-                              "and abs(fluctuation) > 10 order by fluctuation desc", args='2018-04-10')
-    elif type == "change" :
-        return_cnt = curr.execute("select * from stocks.script_detailed_info_history where stock_date = %s "
-                                  "and abs(per_change_today) > 10 order by per_change_today desc", args='2018-04-10')
-    elif type == "weeklytrend":
-        return_cnt = curr.execute("select * from ( select curr.script_name as script_name, "
-                                  "(curr.close_price - hist.open_price)/hist.open_price*100 week_per_change from "
-                                  "stocks.script_detailed_info curr "
-                                  "inner join stocks.script_detailed_info_history hist "
-                                  "on hist.script_name = curr.script_name "
-                                  "and hist.stock_date = ( "
-                                  "select max(dl.dt) From (select max(dt) as mx from stocks.date_list "
-                                  "where loaded = 'Y') cur "
-                                  "inner join stocks.date_list dl "
-                                  "on datediff(cur.mx,dl.dt)>=7)) a where abs(week_per_change) > 10 order by week_per_change")
+    return_cnt = 0
+    if report_type == 'fluc':
+        return_cnt = curr.execute(stocks_db_sql_info_dict['fluc'], args='2018-04-13')
+    elif report_type == "change":
+        return_cnt = curr.execute(stocks_db_sql_info_dict['change'], args='2018-04-13')
+    elif report_type == "weeklytrend":
+        return_cnt = curr.execute(stocks_db_sql_info_dict['weeklytrend'])
 
     else:
         print("invalid input")
@@ -59,7 +49,7 @@ def get_report_data(conn, type):
     for i in range(return_cnt):
         rec = curr.fetchone()
         data_list.append(rec.copy())
-        if i == 0 :
+        if i == 0:
             col_headers = rec.keys()
             print(col_headers)
         print(rec)
@@ -71,7 +61,7 @@ def get_email_credentials():
     config_data = fh.read()
     username = config_data.split("\n")[0].split("=")[1]
     password = config_data.split("\n")[1].split("=")[1]
-    return {"user":username, "password":password}
+    return {"user": username, "password": password}
 
 
 def send_report(email_id, password, conn):
@@ -138,12 +128,13 @@ def send_report(email_id, password, conn):
     message = MIMEMultipart(
         "alternative", None, [MIMEText(msg, 'html')])
     server.sendmail("Stocks App", "vinaykumarcbit@yahoo.co.in", message.as_string())
-    server.sendmail("Stocks App", "vinaykumarkhambhampati@gmail.com", message.as_string())
-    server.sendmail("Stocks App", "manoj.kbti@gmail.com", message.as_string())
+    # server.sendmail("Stocks App", "vinaykumarkhambhampati@gmail.com", message.as_string())
+    # server.sendmail("Stocks App", "manoj.kbti@gmail.com", message.as_string())
 
 
 if __name__ == "__main__":
     dt_list = build_dates_for_year()
+    stock_db_sql_info_dict = stocks_db_sql_info()
     con = get_db_connection()
     # cur = con.cursor()
     print(dt_list[0])
@@ -152,4 +143,3 @@ if __name__ == "__main__":
     # con.commit()
     next_dt = get_next_run_date(con)
     print(next_dt)
-

@@ -1,20 +1,51 @@
 import urllib.request
 import urllib.request
-import traceback
 from PyLearning.Stocks.StockHtmlParser import StockHtmlParser
 import pymysql
-import logging
-from decimal import *
 
 
 def set_header_url():
-    hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
+    hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 '
+                         '(KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
            'Referer': 'https://cssspritegenerator.com',
            'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-           'Accept-Encoding': 'none','Accept-Language': 'en-US,en;q=0.8',
+           'Accept-Encoding': 'none',
+           'Accept-Language': 'en-US,en;q=0.8',
            'Connection': 'keep-alive'}
     return hdr
+
+
+def stocks_db_sql_info():
+    databasename = 'stocks'
+    tables = dict()
+    tables['current'] = 'script_detailed_info'
+    tables['history'] = 'script_detailed_info_history'
+    tables['date_list'] = 'date_list'
+
+    types_sql = dict()
+    types_sql['get_next_run'] = "select min(dt) as min_dt From {databasename}.{date_list} " \
+                                "where loaded is null".format(**tables, databasename=databasename)
+    types_sql['fluc'] = "select * from {databasename}.{history} where stock_date = %s " \
+                        "and abs(fluctuation) > 10 order by fluctuation desc".format(databasename=databasename, **tables)
+    types_sql['change'] = "select * from {databasename}.{history} where stock_date = %s " \
+                          "and abs(per_change_today) > 10 order by per_change_today desc".format(databasename=databasename, **tables)
+    types_sql['weeklytrend'] = "select * from ( select curr.script_name as script_name, " \
+                               "(curr.close_price - hist.open_price)/hist.open_price*100 week_per_change from " \
+                               "{databasename}.{current} curr " \
+                               "inner join {databasename}.{history} hist " \
+                               "on hist.script_name = curr.script_name " \
+                               "and hist.stock_date = ( " \
+                               "select max(dl.dt) From (select max(dt) as mx from {databasename}.{date_list} " \
+                               "where loaded = 'Y') cur " \
+                               "inner join {databasename}.{date_list} dl " \
+                               "on datediff(cur.mx,dl.dt)>=7)) a where abs(week_per_change) > 10 " \
+                               "order by week_per_change".format(databasename=databasename, **tables)
+    types_sql['copy_to_history'] = 'insert into {databasename}.{history} ' \
+                                   'select *,(close_price-prev_close)*100/prev_close ' \
+                                   'as per_change_today, (high_price - low_price)*100/low_price ' \
+                                   'as fluctuation from {databasename}.{current} '.format(databasename=databasename, **tables)
+    return types_sql
 
 
 class Stock:
@@ -64,7 +95,8 @@ class Stock:
             # segmentLink=3&symbolCount=1&series=ALL&dateRange=+&fromDate={}&toDate={}&
             # dataType=PRICEVOLUMEDELIVERABLE""".format(self.script_name, start_date, end_date)
 
-            # url = """https://www.nseindia.com/live_market/dynaContent/live_watch/get_quote/getHistoricalData.jsp?symbol={}&series=EQ&fromDate=undefined&toDate=undefined&datePeriod=1day""".format(self.script_name)
+            # url = """https://www.nseindia.com/live_market/dynaContent/live_watch/
+            # get_quote/getHistoricalData.jsp?symbol={}&series=EQ&fromDate=undefined&toDate=undefined&datePeriod=1day""".format(self.script_name)
             url = """https://www.nseindia.com/products/dynaContent/common/productsSymbolMapping.jsp?symbol={}&segmentLink=3&symbolCount=1&series=EQ&dateRange=day&fromDate=&toDate=&dataType=PRICEVOLUMEDELIVERABLE""".format(self.script_name)
             self.mylogger.info(msg="Started the download of {}".format(self.script_name))
             rqst = urllib.request.Request(url, headers=hdr)
@@ -80,6 +112,7 @@ class Stock:
             # print("****Full response****")
             # convert data to dict
             stock_dict = dict()
+            print(stock_dict)
             prs = StockHtmlParser()
             if not ("No Record Found" in data_html or " No Records  " in data_html):
                 prs.feed(data_html)
@@ -101,10 +134,11 @@ class Stock:
         self.no_of = stock_dict['No. of  Trades']
         self.deliverable = stock_dict['Deliverable Qty'] if stock_dict['Deliverable Qty'] != "-" else None
         # self.dly_qt_to = stock_dict['% Dly Qt to Traded Qty']
-        for k,v in stock_dict.items():
+        for k, v in stock_dict.items():
             self.stock_dict[k] = v
 
-    def get_connection_details(self):
+    @staticmethod
+    def get_connection_details():
         return pymysql.connect(host='localhost', user='root', password='vinay', db='stocks',
                                charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor)
 
@@ -116,14 +150,19 @@ class Stock:
         #   connection = self.get_connection_details()
         #    print("getting connection")
         #    r = connection.cursor()
-
+        print(connection)
         connection = self.get_connection_details()
         r = connection.cursor()
         sql = "insert into stocks.stock_names values(%s, %s, %s)"
         print("wrinting to db")
         r.execute(sql, args=(1, self.script_name, self.exchange))
         sql2 = "insert into stocks.script_detailed_info values(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        # r.execute(sql2, args=(self.script_name, Decimal(self.prev_close.replace(",","")), Decimal(self.open_price.replace(",","")), Decimal(self.high_price.replace(",","")), Decimal(self.low_price.replace(",","")), Decimal(self.last_price.replace(",","")), Decimal(self.close_price.replace(",","")), Decimal(self.vwap.replace(",","")), Decimal(self.ttl_trd.replace(",","")), Decimal(self.turnover.replace(",","")), Decimal(self.no_of.replace(",","")), Decimal(self.deliverable.replace(",",""))))
+        # r.execute(sql2, args=(self.script_name, Decimal(self.prev_close.replace(",","")),
+        # Decimal(self.open_price.replace(",","")), Decimal(self.high_price.replace(",","")),
+        # Decimal(self.low_price.replace(",","")), Decimal(self.last_price.replace(",","")),
+        # Decimal(self.close_price.replace(",","")), Decimal(self.vwap.replace(",","")),
+        # Decimal(self.ttl_trd.replace(",","")), Decimal(self.turnover.replace(",","")),
+        # Decimal(self.no_of.replace(",","")), Decimal(self.deliverable.replace(",",""))))
         r.execute(sql2, args=(self.script_name, self.convert_decimal(self.prev_close),
                               self.convert_decimal(self.open_price),
                               self.convert_decimal(self.high_price),
@@ -135,8 +174,8 @@ class Stock:
                               self.convert_decimal(self.turnover),
                               self.convert_decimal(self.no_of),
                               self.convert_decimal(self.deliverable),
-                              self.date_list ))
+                              self.date_list))
         connection.commit()
 
     def convert_decimal(self, val):
-        return None if (val == None or val == "-") else val.replace(",", "")
+        return None if (val is None or val == "-") else val.replace(",", "")

@@ -14,6 +14,14 @@ download_parallelism = 4
 db_parallelism = 2
 
 
+def get_email_credentials():
+    fh = open("C:\\Users\\Dell\\Desktop\\stocks.config", 'r')
+    config_data = fh.read()
+    username = config_data.split("\n")[0].split("=")[1]
+    password = config_data.split("\n")[1].split("=")[1]
+    return {"user": username, "password": password}
+
+
 def set_header_url():
     hdr = {
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) '
@@ -98,27 +106,15 @@ def close_this_run(dt, con):
     con.commit()
 
 
-def get_report_data(conn, report_type, date):
+def get_report_data(conn, report_type, stocks_db_sql_info_dict, date):
     curr = conn.cursor()
     return_cnt = 0
     if report_type == 'fluc':
-        return_cnt = curr.execute("select * from stocks.script_detailed_info_history where stock_date = %s "
-                                  "and abs(fluctuation) > 10 order by fluctuation desc", args=date)
+        return_cnt = curr.execute(stocks_db_sql_info_dict['fluc'], args=date)
     elif report_type == "change":
-        return_cnt = curr.execute("select * from stocks.script_detailed_info_history where stock_date = %s "
-                                  "and abs(per_change_today) > 10 order by per_change_today desc", args=date)
+        return_cnt = curr.execute(stocks_db_sql_info_dict['change'], args=date)
     elif report_type == "weeklytrend":
-        return_cnt = curr.execute("select * from ( select curr.script_name as script_name, "
-                                  "(curr.close_price - hist.open_price)/hist.open_price*100 week_per_change from "
-                                  "stocks.script_detailed_info curr "
-                                  "inner join stocks.script_detailed_info_history hist "
-                                  "on hist.script_name = curr.script_name "
-                                  "and hist.stock_date = ( "
-                                  "select max(dl.dt) From (select max(dt) as mx from stocks.date_list "
-                                  "where loaded = 'Y') cur "
-                                  "inner join stocks.date_list dl "
-                                  "on datediff(cur.mx,dl.dt)>=7)) a where abs(week_per_change) > 10 "
-                                  "order by week_per_change")
+        return_cnt = curr.execute(stocks_db_sql_info_dict['weeklytrend'])
 
     else:
         print("invalid input")
@@ -134,7 +130,8 @@ def get_report_data(conn, report_type, date):
     return data_list
 
 
-def send_report(email_id, password, conn, date):
+def send_report(email_id, password, conn, stock_db_sql_info_dict, date):
+    user_cred = get_email_credentials()
     print(email_id, password)
     import smtplib
     import pandas
@@ -143,10 +140,10 @@ def send_report(email_id, password, conn, date):
     server = smtplib.SMTP('smtp.gmail.com', 587)
     server.ehlo()
     server.starttls()
-    server.login("stocks.reportgen@gmail.com", "Narendramodi")
-    data_list_fluc = get_report_data(conn, "fluc", date)
-    data_list_change = get_report_data(conn, "change", date)
-    data_list_weeklytrend = get_report_data(conn, "weeklytrend", date)
+    server.login(user_cred['user'], user_cred['password'])
+    data_list_fluc = get_report_data(conn, "fluc", stock_db_sql_info_dict, date)
+    data_list_change = get_report_data(conn, "change", stock_db_sql_info_dict, date)
+    data_list_weeklytrend = get_report_data(conn, "weeklytrend", stock_db_sql_info_dict, date)
 
     df_fluc = pandas.DataFrame(data_list_fluc)
     df_change = pandas.DataFrame(data_list_change)
@@ -163,7 +160,6 @@ def send_report(email_id, password, conn, date):
 
     # df.to_html()
     msg = df_fluc.to_html()  # The /n separates the message from the headers
-
     msg2 = df_change.to_html()  # The /n separates the message from the headers
     msg3 = df_weeklytrend.to_html()  # The /n separates the message from the headers
 
@@ -173,14 +169,16 @@ def send_report(email_id, password, conn, date):
     print(msg)
     message = MIMEMultipart(
         "alternative", None, [MIMEText(msg, 'html')])
+
     server.sendmail("Stocks App", "vinaykumarcbit@yahoo.co.in", message.as_string())
-    server.sendmail("Stocks App", "vinaykumarkhambhampati@gmail.com", message.as_string())
-    server.sendmail("Stocks App", "manoj.kbti@gmail.com", message.as_string())
+    # server.sendmail("Stocks App", "vinaykumarkhambhampati@gmail.com", message.as_string())
+    # server.sendmail("Stocks App", "manoj.kbti@gmail.com", message.as_string())
 
 
 def main():
-    process_logger = logging.getLogger(__name__)
     global process_logger
+    stock_db_sql_info_dict = stocks_db_sql_info()
+    process_logger = logging.getLogger(__name__)
     mod_name = __file__.__str__().split("/")[-1].replace(".py", "")
     set_logger(process_logger, mod_name)
     process_logger.info(msg="Started db cleanup")
@@ -233,7 +231,7 @@ def main():
     pickle.dump(list_of_stocks, file=open("D://marketdata//todayJson.pkl", 'wb'))
     copy_data_to_history()
     close_this_run(next_dt, con)
-    send_report("a", "b", con, next_dt)
+    send_report("a", "b", con, stock_db_sql_info_dict, next_dt)
 
 
 if __name__ == "__main__":
