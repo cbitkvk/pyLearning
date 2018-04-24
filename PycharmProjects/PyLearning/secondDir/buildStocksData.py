@@ -171,8 +171,8 @@ def send_report(email_id, password, conn, stock_db_sql_info_dict, date):
         "alternative", None, [MIMEText(msg, 'html')])
 
     server.sendmail("Stocks App", "vinaykumarcbit@yahoo.co.in", message.as_string())
-    # server.sendmail("Stocks App", "vinaykumarkhambhampati@gmail.com", message.as_string())
-    # server.sendmail("Stocks App", "manoj.kbti@gmail.com", message.as_string())
+    server.sendmail("Stocks App", "vinaykumarkhambhampati@gmail.com", message.as_string())
+    server.sendmail("Stocks App", "manoj.kbti@gmail.com", message.as_string())
 
 
 def main():
