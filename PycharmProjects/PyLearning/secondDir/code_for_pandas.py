@@ -9,10 +9,10 @@ def get_connection_details():
                            charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor)
 
 
-def main():
+def main_pandas():
     conn = get_connection_details()
     df = pandas.read_sql("select * from stocks.script_detailed_info_history "
-                         " order by stock_date desc", conn)
+                         "  order by stock_date desc", conn)
     df_grp = df.groupby('script_name')
     return_list = list()
     for grp, local_df in df_grp:
@@ -52,41 +52,25 @@ def main():
             month_end = local_df[str(year) + '-' + month_id]['close_price'][0]
             mtd_change = (month_end - month_start)/month_end*100
 
+            per_from_this_year_high =  ( today_close_price  - mx)/today_close_price *100
+
+
             return_df = dict({"year_min": mn, "year_max": mx, "ytd_change": ytd_change,
                               "weeklymax": weeklymax, "weeklymin": weeklymin, "weeklyavg": weeklyavg,
                               "week_change": week_change,
                               "month_max": month_max, "month_min": month_min, "month_avg": month_avg,
-                              "mtd_change": mtd_change})
+                              "mtd_change": mtd_change, "per_from_this_year_high": per_from_this_year_high})
             return_df['script_name'] = grp
             return_list.append(return_df)
         except Exception as p:
             print("Processing {} failed".format(grp))
     summary_report_df = pandas.DataFrame(return_list)
     summary_report_df.set_index(keys='script_name', inplace=True)
-    summary_report_df.columns = ['year_max', 'year_min', 'ytd_change',
-                                     'month_max', 'month_min', 'month_avg', 'mtd_change',
-                                     'weeklymax', 'weeklymin', 'weeklyavg', 'week_change']
-
-
-def pandas_agg_method(df: pandas.Series) -> dict:
-    import datetime
-    mx = df.max()
-    mn = df.min()
-    weeklymax = df[0:5].max()
-    weeklymin = df[0:5].min()
-    today_close_price = df.iloc[0]
-    start_of_year_close_price = df.iloc[-1]
-    ytd_change = (start_of_year_close_price - today_close_price)/start_of_year_close_price*100
-    year = datetime.date.today().year
-    month_id = datetime.date.today().month
-    if datetime.date.today().day <= 7:
-        month_id -= 1
-    month_max = df[str(year) + '-' + str(month_id)]['close_price'].max
-    month_min = df[str(year) + '-' + str(month_id)]['close_price'].min
-    month_avg = df[str(year) + '-' + str(month_id)]['close_price'].mean
-    return {"mn": mn, "mx": mx, "weeklymax": weeklymax, "weeklymin": weeklymin,
-            "ytd_change" : ytd_change, "month_max" : month_max, "month_min": month_min, "month_avg": month_avg}
+    summary_report_df = summary_report_df [['year_max', 'year_min', 'ytd_change',
+                                            'month_max', 'month_min', 'month_avg', 'mtd_change',
+                                            'weeklymax', 'weeklymin', 'weeklyavg', 'week_change', 'per_from_this_year_high']]
+    return summary_report_df
 
 
 if __name__ == '__main__':
-    main()
+    main_pandas()

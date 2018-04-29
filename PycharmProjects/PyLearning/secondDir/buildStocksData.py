@@ -172,7 +172,7 @@ def send_report(email_id, password, conn, stock_db_sql_info_dict, date):
 
     server.sendmail("Stocks App", "vinaykumarcbit@yahoo.co.in", message.as_string())
     server.sendmail("Stocks App", "vinaykumarkhambhampati@gmail.com", message.as_string())
-    server.sendmail("Stocks App", "manoj.kbti@gmail.com", message.as_string())
+    # server.sendmail("Stocks App", "manoj.kbti@gmail.com", message.as_string())
 
 
 def main():
@@ -236,6 +236,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 # https://www.nseindia.com/live_market/dynaContent/live_watch/get_quote/getHistoricalData.jsp?symbol=INFY&series=EQ&fromDate=undefined&toDate=undefined&datePeriod=1day
 # https://www.nseindia.com/products/dynaContent/common/productsSymbolMapping.jsp?symbol=INFY&segmentLink=3&symbolCount=1&series=ALL&dateRange=+&fromDate=01-03-2018&toDate=20-03-2018&dataType=PRICEVOLUMEDELIVERABLE
