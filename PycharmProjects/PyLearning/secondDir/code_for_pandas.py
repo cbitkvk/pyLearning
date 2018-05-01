@@ -2,7 +2,7 @@ import pandas
 import pymysql
 import numpy
 import datetime
-
+import traceback
 
 def get_connection_details():
     return pymysql.connect(host='localhost', user='root', password='vinay', db='stocks',
@@ -37,12 +37,12 @@ def main_pandas():
 
             year = datetime.date.today().year
             month_id = datetime.date.today().month
+            if datetime.date.today().day <= 7:
+                month_id -= 1
             if month_id <= 9:
                 month_id = '0'+str(month_id)
             else:
                 month_id = str(month_id)
-            if datetime.date.today().day <= 7:
-                month_id -= 1
 
             month_max = local_df[str(year) + '-' + month_id]['close_price'].max()
             month_min = local_df[str(year) + '-' + month_id]['close_price'].min()
@@ -64,6 +64,7 @@ def main_pandas():
             return_list.append(return_df)
         except Exception as p:
             print("Processing {} failed".format(grp))
+            traceback.print_exc()
     summary_report_df = pandas.DataFrame(return_list)
     summary_report_df.set_index(keys='script_name', inplace=True)
     summary_report_df = summary_report_df [['year_max', 'year_min', 'ytd_change',
